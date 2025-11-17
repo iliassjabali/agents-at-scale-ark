@@ -83,6 +83,51 @@ curl http://localhost:8000/agents
 curl http://localhost:8000/agent/<agent-name>/.well-known/agent.json
 ```
 
+### Proxy Endpoints
+
+The proxy endpoints provide direct pass-through access to MCP and A2A servers, enabling tools like MCP inspector or A2A inspector to connect through the ark-api.
+
+**Endpoints:**
+- `/proxy/mcp/{mcp-server-name}` - Proxy to MCP server
+- `/proxy/mcp/{mcp-server-name}/{path}` - Proxy to MCP server with path suffix
+- `/proxy/a2a/{a2a-server-name}` - Proxy to A2A server
+- `/proxy/a2a/{a2a-server-name}/{path}` - Proxy to A2A server with path suffix
+
+**Features:**
+- Supports all HTTP methods (GET, POST, PUT, DELETE, PATCH, OPTIONS)
+- Forwards request headers (except host/connection headers)
+- Includes headers from server spec configuration
+- Preserves query parameters
+- Handles request bodies for POST/PUT/PATCH requests
+
+**Examples:**
+
+```bash
+# Proxy to MCP server root
+curl http://localhost:8000/proxy/mcp/my-mcp-server
+
+# Proxy to MCP server SSE endpoint
+curl http://localhost:8000/proxy/mcp/my-mcp-server/sse
+
+# Proxy to A2A server agent card
+curl http://localhost:8000/proxy/a2a/my-a2a-server/.well-known/agent.json
+
+# Proxy POST request with body
+curl -X POST http://localhost:8000/proxy/mcp/my-mcp-server/tools \
+  -H "Content-Type: application/json" \
+  -d '{"name": "test-tool"}'
+
+# Proxy with query parameters
+curl http://localhost:8000/proxy/a2a/my-a2a-server/agents?limit=10
+```
+
+**Error Responses:**
+- `404` - Server not found
+- `503` - Server has no resolved address (not ready)
+- `502` - Proxy request failed (target server unreachable)
+
+The proxy automatically resolves server addresses from Kubernetes CRD status and includes any headers configured in the server spec. Headers from ValueSource references (secrets/configmaps) are currently not resolved and will be logged as warnings.
+
 ## Authentication
 
 ARK API supports multiple authentication modes:

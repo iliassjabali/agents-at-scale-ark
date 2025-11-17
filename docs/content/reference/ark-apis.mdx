@@ -222,6 +222,58 @@ The `queryAnnotations` value is parsed as JSON and applied as annotations to the
 
 See [Streaming Responses](/developer-guide/queries/streaming#the-ark-metadata-field) for how metadata is returned in responses.
 
+## Proxy Endpoints
+
+The proxy endpoints provide direct pass-through access to MCP and A2A servers registered in ARK. This enables tools like MCP inspector or A2A inspector to connect through the ark-api without needing direct access to the server ports.
+
+### MCP Server Proxy
+
+Proxy requests to MCP servers:
+
+```bash
+# Proxy to MCP server root
+curl http://localhost:8000/proxy/mcp/my-mcp-server
+
+# Proxy to MCP server SSE endpoint
+curl http://localhost:8000/proxy/mcp/my-mcp-server/sse
+
+# Proxy POST request with body
+curl -X POST http://localhost:8000/proxy/mcp/my-mcp-server/tools \
+  -H "Content-Type: application/json" \
+  -d '{"name": "test-tool"}'
+```
+
+### A2A Server Proxy
+
+Proxy requests to A2A servers:
+
+```bash
+# Proxy to A2A server root
+curl http://localhost:8000/proxy/a2a/my-a2a-server
+
+# Proxy to A2A server agent card
+curl http://localhost:8000/proxy/a2a/my-a2a-server/.well-known/agent.json
+
+# Proxy with query parameters
+curl http://localhost:8000/proxy/a2a/my-a2a-server/agents?limit=10
+```
+
+### Features
+
+- **HTTP Methods**: Supports GET, POST, PUT, DELETE, PATCH, OPTIONS
+- **Header Forwarding**: Automatically forwards request headers (except host/connection headers)
+- **Server Headers**: Includes headers configured in the server spec
+- **Query Parameters**: Preserves query parameters from the original request
+- **Request Bodies**: Handles request bodies for POST/PUT/PATCH requests
+
+### Error Responses
+
+- `404` - Server not found
+- `503` - Server has no resolved address (not ready yet)
+- `502` - Proxy request failed (target server unreachable)
+
+The proxy automatically resolves server addresses from Kubernetes CRD status fields (`resolvedAddress` for MCP servers, `lastResolvedAddress` for A2A servers) and includes any headers configured in the server spec.
+
 #### Response Metadata
 
 Responses include an `ark` field with query metadata including status, token usage, and A2A context IDs:
